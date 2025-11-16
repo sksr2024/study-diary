@@ -2,18 +2,16 @@ name: Issue to Markdown
 
 on:
   issues:
-    types: [opened]  # Issue が作成されたときに実行
+    types: [opened]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      # リポジトリをチェックアウト
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Issue のタイトル・本文を環境変数に設定
       - name: Set variables
         run: |
           # Issueタイトルから日付を抽出 (YYYY-MM-DD)
@@ -22,30 +20,21 @@ jobs:
             echo "Error: タイトルに YYYY-MM-DD が含まれていません"
             exit 1
           fi
-          echo "DATE=$DATE" >> $GITHUB_ENV
-
-          # 年・月を抽出
           YEAR=$(echo $DATE | cut -d'-' -f1)
           MONTH=$(echo $DATE | cut -d'-' -f2)
-          echo "YEAR=$YEAR" >> $GITHUB_ENV
-          echo "MONTH=$MONTH" >> $GITHUB_ENV
+          echo "DATE=$DATE"
+          echo "YEAR=$YEAR"
+          echo "MONTH=$MONTH"
 
-          # Issue本文
-          echo "BODY=${{ github.event.issue.body }}" >> $GITHUB_ENV
+          # 年/月ディレクトリ作成
+          mkdir -p $YEAR/$MONTH
 
-      # 年/月フォルダを作成
-      - name: Create directory
-        run: mkdir -p $YEAR/$MONTH
-
-      # Markdown ファイルを作成
-      - name: Create markdown file
-        run: |
+          # Markdown ファイル作成（Issue 本文を直接書き込む）
           FILE="$YEAR/$MONTH/$DATE.md"
           echo "# $DATE" > "$FILE"
           echo "" >> "$FILE"
-          echo "$BODY" >> "$FILE"
+          echo "${{ github.event.issue.body }}" >> "$FILE"
 
-      # コミット& push
       - name: Commit and push
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
