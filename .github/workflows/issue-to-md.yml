@@ -2,47 +2,53 @@ name: Issue to Markdown
 
 on:
   issues:
-    types: [opened]
+    types: [opened]  # Issue が作成されたときに実行
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
+      # リポジトリをチェックアウト
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Get Issue Info
-        uses: actions-ecosystem/action-get-issue-content@v1
-        id: issue
-
-      - name: Extract date from title
-        id: extract
+      # Issue のタイトル・本文を環境変数に設定
+      - name: Set variables
         run: |
-          TITLE="${{ steps.issue.outputs.title }}"
-          # タイトルから日付（YYYY-MM-DD）部分を抽出
-          DATE=$(echo "$TITLE" | grep -Eo '[0-9]{4}-[0-9]{2}-[0-9]{2}')
-          echo "date=$DATE" >> $GITHUB_OUTPUT
+          # Issueタイトルから日付を抽出 (YYYY-MM-DD)
+          DATE=$(echo "${{ github.event.issue.title }}" | grep -Eo '[0-9]{4}-[0-9]{2}-[0-9]{2}')
+          if [ -z "$DATE" ]; then
+            echo "Error: タイトルに YYYY-MM-DD が含まれていません"
+            exit 1
+          fi
+          echo "DATE=$DATE" >> $GITHUB_ENV
 
+          # 年・月を抽出
           YEAR=$(echo $DATE | cut -d'-' -f1)
           MONTH=$(echo $DATE | cut -d'-' -f2)
-          echo "year=$YEAR" >> $GITHUB_OUTPUT
-          echo "month=$MONTH" >> $GITHUB_OUTPUT
+          echo "YEAR=$YEAR" >> $GITHUB_ENV
+          echo "MONTH=$MONTH" >> $GITHUB_ENV
 
+          # Issue本文
+          echo "BODY=${{ github.event.issue.body }}" >> $GITHUB_ENV
+
+      # 年/月フォルダを作成
       - name: Create directory
-        run: |
-          mkdir -p ${{ steps.extract.outputs.year }}/${{ steps.extract.outputs.month }}
+        run: mkdir -p $YEAR/$MONTH
 
+      # Markdown ファイルを作成
       - name: Create markdown file
         run: |
-          FILE="${{ steps.extract.outputs.year }}/${{ steps.extract.outputs.month }}/${{ steps.extract.outputs.date }}.md"
-          echo "# ${{ steps.extract.outputs.date }}" > "$FILE"
+          FILE="$YEAR/$MONTH/$DATE.md"
+          echo "# $DATE" > "$FILE"
           echo "" >> "$FILE"
-          echo "${{ steps.issue.outputs.body }}" >> "$FILE"
+          echo "$BODY" >> "$FILE"
 
+      # コミット& push
       - name: Commit and push
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "Add diary: ${{ steps.extract.outputs.date }}"
+          commit_message: "Add diary: $DATE"
           push_options: '--force'
 
