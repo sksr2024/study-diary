@@ -1,5 +1,8 @@
 name: Issue to Markdown
 
+permissions:
+  contents: write
+
 on:
   issues:
     types: [opened]
