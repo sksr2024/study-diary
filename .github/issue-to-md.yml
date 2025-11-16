@@ -1,0 +1,48 @@
+name: Issue to Markdown
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Get Issue Info
+        uses: actions-ecosystem/action-get-issue-content@v1
+        id: issue
+
+      - name: Extract date from title
+        id: extract
+        run: |
+          TITLE="${{ steps.issue.outputs.title }}"
+          # タイトルから日付（YYYY-MM-DD）部分を抽出
+          DATE=$(echo "$TITLE" | grep -Eo '[0-9]{4}-[0-9]{2}-[0-9]{2}')
+          echo "date=$DATE" >> $GITHUB_OUTPUT
+
+          YEAR=$(echo $DATE | cut -d'-' -f1)
+          MONTH=$(echo $DATE | cut -d'-' -f2)
+          echo "year=$YEAR" >> $GITHUB_OUTPUT
+          echo "month=$MONTH" >> $GITHUB_OUTPUT
+
+      - name: Create directory
+        run: |
+          mkdir -p ${{ steps.extract.outputs.year }}/${{ steps.extract.outputs.month }}
+
+      - name: Create markdown file
+        run: |
+          FILE="${{ steps.extract.outputs.year }}/${{ steps.extract.outputs.month }}/${{ steps.extract.outputs.date }}.md"
+          echo "# ${{ steps.extract.outputs.date }}" > "$FILE"
+          echo "" >> "$FILE"
+          echo "${{ steps.issue.outputs.body }}" >> "$FILE"
+
+      - name: Commit and push
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Add diary: ${{ steps.extract.outputs.date }}"
+          push_options: '--force'
+
