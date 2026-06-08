@@ -1,16 +1,16 @@
 ---
 name: Daily Log
-about: 今日の学習ログを記録する
-title: "YYYY-MM-DD 学習ログ"
+about: 今日集中してやったことを記録する
+title: "YYYY-MM-DD 集中ログ"
 labels: ["diary"]
 assignees: ""
 ---
 
-## 今日の学習内容
+## 今日できたこと
 - 
 
 ## メモ
 - 
 
-## 明日やること
+## 明日やりたいこと
 - 
